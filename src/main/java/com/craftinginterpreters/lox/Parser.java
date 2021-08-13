@@ -406,7 +406,7 @@ class Parser {
         }
 
         if (match(NUMBER, STRING)) {
-            return new Expr.Literal(previous().literal);
+            return new Expr.Literal(previous().literal());
         }
 
         if (match(SUPER)) {
@@ -457,7 +457,7 @@ class Parser {
         if (isAtEnd()) {
             return false;
         }
-        return peek().type == type;
+        return peek().type() == type;
     }
 
     private Token advance() {
@@ -468,7 +468,7 @@ class Parser {
     }
 
     private boolean isAtEnd() {
-        return peek().type == EOF;
+        return peek().type() == EOF;
     }
 
     private Token peek() {
@@ -488,11 +488,11 @@ class Parser {
         advance();
 
         while (!isAtEnd()) {
-            if (previous().type == SEMICOLON) {
+            if (previous().type() == SEMICOLON) {
                 return;
             }
 
-            switch (peek().type) {
+            switch (peek().type()) {
                 case CLASS:
                 case FUN:
                 case VAR:

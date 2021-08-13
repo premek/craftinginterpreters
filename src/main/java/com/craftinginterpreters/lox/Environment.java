@@ -17,8 +17,8 @@ class Environment {
     }
 
     Object get(Token name) {
-        if (values.containsKey(name.lexeme)) {
-            return values.get(name.lexeme);
+        if (values.containsKey(name.lexeme())) {
+            return values.get(name.lexeme());
         }
 
         if (enclosing != null) {
@@ -26,12 +26,12 @@ class Environment {
         }
 
         throw new RuntimeError(name,
-                "Undefined variable '" + name.lexeme + "'.");
+                "Undefined variable '" + name.lexeme() + "'.");
     }
 
     void assign(Token name, Object value) {
-        if (values.containsKey(name.lexeme)) {
-            values.put(name.lexeme, value);
+        if (values.containsKey(name.lexeme())) {
+            values.put(name.lexeme(), value);
             return;
         }
 
@@ -41,7 +41,7 @@ class Environment {
         }
 
         throw new RuntimeError(name,
-                "Undefined variable '" + name.lexeme + "'.");
+                "Undefined variable '" + name.lexeme() + "'.");
     }
 
     void define(String name, Object value) {
@@ -62,7 +62,7 @@ class Environment {
     }
 
     void assignAt(int distance, Token name, Object value) {
-        ancestor(distance).values.put(name.lexeme, value);
+        ancestor(distance).values.put(name.lexeme(), value);
     }
 
     @Override

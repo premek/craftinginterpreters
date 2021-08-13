@@ -103,7 +103,7 @@ class Interpreter implements Expr.Visitor<Object>,
             }
         }
 
-        environment.define(stmt.name().lexeme, null);
+        environment.define(stmt.name().lexeme(), null);
 
         if (stmt.superclass() != null) {
             environment = new Environment(environment);
@@ -116,14 +116,14 @@ class Interpreter implements Expr.Visitor<Object>,
       LoxFunction function = new LoxFunction(method, environment);
              */
             LoxFunction function = new LoxFunction(method, environment,
-                    method.name().lexeme.equals("init"));
-            methods.put(method.name().lexeme, function);
+                    method.name().lexeme().equals("init"));
+            methods.put(method.name().lexeme(), function);
         }
 
         /* Classes interpret-methods < Inheritance interpreter-construct-class
-    LoxClass klass = new LoxClass(stmt.name().lexeme, methods);
+    LoxClass klass = new LoxClass(stmt.name().lexeme(), methods);
          */
-        LoxClass klass = new LoxClass(stmt.name().lexeme,
+        LoxClass klass = new LoxClass(stmt.name().lexeme(),
                 (LoxClass) superclass, methods);
 
         if (superclass != null) {
@@ -131,7 +131,7 @@ class Interpreter implements Expr.Visitor<Object>,
         }
 
         /* Classes interpreter-visit-class < Classes interpret-methods
-    LoxClass klass = new LoxClass(stmt.name().lexeme);
+    LoxClass klass = new LoxClass(stmt.name().lexeme());
          */
         environment.assign(stmt.name(), klass);
         return null;
@@ -153,7 +153,7 @@ class Interpreter implements Expr.Visitor<Object>,
          */
         LoxFunction function = new LoxFunction(stmt, environment,
                 false);
-        environment.define(stmt.name().lexeme, function);
+        environment.define(stmt.name().lexeme(), function);
         return null;
     }
 
@@ -191,7 +191,7 @@ class Interpreter implements Expr.Visitor<Object>,
             value = evaluate(stmt.initializer());
         }
 
-        environment.define(stmt.name().lexeme, value);
+        environment.define(stmt.name().lexeme(), value);
         return null;
     }
 
@@ -225,7 +225,7 @@ class Interpreter implements Expr.Visitor<Object>,
         Object left = evaluate(expr.left());
         Object right = evaluate(expr.right()); // [left]
 
-        switch (expr.operator().type) {
+        switch (expr.operator().type()) {
             case BANG_EQUAL:
                 return !isEqual(left, right);
             case EQUAL_EQUAL:
@@ -320,7 +320,7 @@ class Interpreter implements Expr.Visitor<Object>,
     public Object visitLogicalExpr(Expr.Logical expr) {
         Object left = evaluate(expr.left());
 
-        if (expr.operator().type == TokenType.OR) {
+        if (expr.operator().type() == TokenType.OR) {
             if (isTruthy(left)) {
                 return left;
             }
@@ -356,11 +356,11 @@ class Interpreter implements Expr.Visitor<Object>,
         LoxInstance object = (LoxInstance) environment.getAt(
                 distance - 1, "this");
 
-        LoxFunction method = superclass.findMethod(expr.method().lexeme);
+        LoxFunction method = superclass.findMethod(expr.method().lexeme());
 
         if (method == null) {
             throw new RuntimeError(expr.method(),
-                    "Undefined property '" + expr.method().lexeme + "'.");
+                    "Undefined property '" + expr.method().lexeme() + "'.");
         }
 
         return method.bind(object);
@@ -375,7 +375,7 @@ class Interpreter implements Expr.Visitor<Object>,
     public Object visitUnaryExpr(Expr.Unary expr) {
         Object right = evaluate(expr.right());
 
-        switch (expr.operator().type) {
+        switch (expr.operator().type()) {
             case BANG:
                 return !isTruthy(right);
             case MINUS:
@@ -398,7 +398,7 @@ class Interpreter implements Expr.Visitor<Object>,
     private Object lookUpVariable(Token name, Expr expr) {
         Integer distance = locals.get(expr);
         if (distance != null) {
-            return environment.getAt(distance, name.lexeme);
+            return environment.getAt(distance, name.lexeme());
         } else {
             return globals.get(name);
         }
