@@ -2,7 +2,7 @@ package com.craftinginterpreters.lox;
 
 import java.util.List;
 
-abstract class Expr {
+public interface Expr {
 
     interface Visitor<R> {
 
@@ -32,197 +32,113 @@ abstract class Expr {
     }
 
     // Nested Expr classes here...
-    static class Assign extends Expr {
-
-        Assign(Token name, Expr value) {
-            this.name = name;
-            this.value = value;
-        }
+    public record Assign(Token name, Expr value) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitAssignExpr(this);
         }
 
-        final Token name;
-        final Expr value;
     }
 
-    static class Binary extends Expr {
-
-        Binary(Expr left, Token operator, Expr right) {
-            this.left = left;
-            this.operator = operator;
-            this.right = right;
-        }
+    public record Binary(Expr left, Token operator, Expr right) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitBinaryExpr(this);
         }
 
-        final Expr left;
-        final Token operator;
-        final Expr right;
     }
 
-    static class Call extends Expr {
-
-        Call(Expr callee, Token paren, List<Expr> arguments) {
-            this.callee = callee;
-            this.paren = paren;
-            this.arguments = arguments;
-        }
+    public record Call(Expr callee, Token paren, List<Expr> arguments) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitCallExpr(this);
         }
 
-        final Expr callee;
-        final Token paren;
-        final List<Expr> arguments;
     }
 
-    static class Get extends Expr {
-
-        Get(Expr object, Token name) {
-            this.object = object;
-            this.name = name;
-        }
+    public record Get(Expr object, Token name) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitGetExpr(this);
         }
 
-        final Expr object;
-        final Token name;
     }
 
-    static class Grouping extends Expr {
-
-        Grouping(Expr expression) {
-            this.expression = expression;
-        }
+    public record Grouping(Expr expression) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitGroupingExpr(this);
         }
 
-        final Expr expression;
     }
 
-    static class Literal extends Expr {
-
-        Literal(Object value) {
-            this.value = value;
-        }
+    public record Literal(Object value) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitLiteralExpr(this);
         }
 
-        final Object value;
     }
 
-    static class Logical extends Expr {
-
-        Logical(Expr left, Token operator, Expr right) {
-            this.left = left;
-            this.operator = operator;
-            this.right = right;
-        }
+    public record Logical(Expr left, Token operator, Expr right) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitLogicalExpr(this);
         }
 
-        final Expr left;
-        final Token operator;
-        final Expr right;
     }
 
-    static class Set extends Expr {
-
-        Set(Expr object, Token name, Expr value) {
-            this.object = object;
-            this.name = name;
-            this.value = value;
-        }
+    public record Set(Expr object, Token name, Expr value) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitSetExpr(this);
         }
 
-        final Expr object;
-        final Token name;
-        final Expr value;
     }
 
-    static class Super extends Expr {
-
-        Super(Token keyword, Token method) {
-            this.keyword = keyword;
-            this.method = method;
-        }
+    public record Super(Token keyword, Token method) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitSuperExpr(this);
         }
 
-        final Token keyword;
-        final Token method;
     }
 
-    static class This extends Expr {
-
-        This(Token keyword) {
-            this.keyword = keyword;
-        }
+    public record This(Token keyword) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitThisExpr(this);
         }
 
-        final Token keyword;
     }
 
-    static class Unary extends Expr {
-
-        Unary(Token operator, Expr right) {
-            this.operator = operator;
-            this.right = right;
-        }
+    public record Unary(Token operator, Expr right) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitUnaryExpr(this);
         }
 
-        final Token operator;
-        final Expr right;
     }
 
-    static class Variable extends Expr {
-
-        Variable(Token name) {
-            this.name = name;
-        }
+    public record Variable(Token name) implements Expr {
 
         @Override
-        <R> R accept(Visitor<R> visitor) {
+        public <R> R accept(Visitor<R> visitor) {
             return visitor.visitVariableExpr(this);
         }
 
-        final Token name;
     }
 
-    abstract <R> R accept(Visitor<R> visitor);
+    public <R> R accept(Visitor<R> visitor);
 }

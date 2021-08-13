@@ -108,52 +108,52 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
 
     @Override
     public String visitAssignExpr(Expr.Assign expr) {
-        return parenthesize2("=", expr.name.lexeme, expr.value);
+        return parenthesize2("=", expr.name().lexeme, expr.value());
     }
 
     @Override
     public String visitBinaryExpr(Expr.Binary expr) {
-        return parenthesize(expr.operator.lexeme,
-                expr.left, expr.right);
+        return parenthesize(expr.operator().lexeme,
+                expr.left(), expr.right());
     }
 
     @Override
     public String visitCallExpr(Expr.Call expr) {
-        return parenthesize2("call", expr.callee, expr.arguments);
+        return parenthesize2("call", expr.callee(), expr.arguments());
     }
 
     @Override
     public String visitGetExpr(Expr.Get expr) {
-        return parenthesize2(".", expr.object, expr.name.lexeme);
+        return parenthesize2(".", expr.object(), expr.name().lexeme);
     }
 
     @Override
     public String visitGroupingExpr(Expr.Grouping expr) {
-        return parenthesize("group", expr.expression);
+        return parenthesize("group", expr.expression());
     }
 
     @Override
     public String visitLiteralExpr(Expr.Literal expr) {
-        if (expr.value == null) {
+        if (expr.value() == null) {
             return "nil";
         }
-        return expr.value.toString();
+        return expr.value().toString();
     }
 
     @Override
     public String visitLogicalExpr(Expr.Logical expr) {
-        return parenthesize(expr.operator.lexeme, expr.left, expr.right);
+        return parenthesize(expr.operator().lexeme, expr.left(), expr.right());
     }
 
     @Override
     public String visitSetExpr(Expr.Set expr) {
         return parenthesize2("=",
-                expr.object, expr.name.lexeme, expr.value);
+                expr.object(), expr.name().lexeme, expr.value());
     }
 
     @Override
     public String visitSuperExpr(Expr.Super expr) {
-        return parenthesize2("super", expr.method);
+        return parenthesize2("super", expr.method());
     }
 
     @Override
@@ -163,12 +163,12 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
 
     @Override
     public String visitUnaryExpr(Expr.Unary expr) {
-        return parenthesize(expr.operator.lexeme, expr.right);
+        return parenthesize(expr.operator().lexeme, expr.right());
     }
 
     @Override
     public String visitVariableExpr(Expr.Variable expr) {
-        return expr.name.lexeme;
+        return expr.name().lexeme;
     }
 
     private String parenthesize(String name, Expr... exprs) {

@@ -53,7 +53,8 @@ class Interpreter implements Expr.Visitor<Object>,
             for (Stmt statement : statements) {
                 execute(statement);
             }
-        } catch (RuntimeError error) {
+        }
+        catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
     }
@@ -79,7 +80,8 @@ class Interpreter implements Expr.Visitor<Object>,
             for (Stmt statement : statements) {
                 execute(statement);
             }
-        } finally {
+        }
+        finally {
             this.environment = previous;
         }
     }
@@ -96,7 +98,7 @@ class Interpreter implements Expr.Visitor<Object>,
         if (stmt.superclass() != null) {
             superclass = evaluate(stmt.superclass());
             if (!(superclass instanceof LoxClass)) {
-                throw new RuntimeError(stmt.superclass().name,
+                throw new RuntimeError(stmt.superclass().name(),
                         "Superclass must be a class.");
             }
         }
@@ -203,16 +205,16 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
-        Object value = evaluate(expr.value);
+        Object value = evaluate(expr.value());
         /* Statements and State visit-assign < Resolving and Binding resolved-assign
-    environment.assign(expr.name, value);
+    environment.assign(expr.name(), value);
          */
 
         Integer distance = locals.get(expr);
         if (distance != null) {
-            environment.assignAt(distance, expr.name, value);
+            environment.assignAt(distance, expr.name(), value);
         } else {
-            globals.assign(expr.name, value);
+            globals.assign(expr.name(), value);
         }
 
         return value;
@@ -220,28 +222,28 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Object visitBinaryExpr(Expr.Binary expr) {
-        Object left = evaluate(expr.left);
-        Object right = evaluate(expr.right); // [left]
+        Object left = evaluate(expr.left());
+        Object right = evaluate(expr.right()); // [left]
 
-        switch (expr.operator.type) {
+        switch (expr.operator().type) {
             case BANG_EQUAL:
                 return !isEqual(left, right);
             case EQUAL_EQUAL:
                 return isEqual(left, right);
             case GREATER:
-                checkNumberOperands(expr.operator, left, right);
+                checkNumberOperands(expr.operator(), left, right);
                 return (double) left > (double) right;
             case GREATER_EQUAL:
-                checkNumberOperands(expr.operator, left, right);
+                checkNumberOperands(expr.operator(), left, right);
                 return (double) left >= (double) right;
             case LESS:
-                checkNumberOperands(expr.operator, left, right);
+                checkNumberOperands(expr.operator(), left, right);
                 return (double) left < (double) right;
             case LESS_EQUAL:
-                checkNumberOperands(expr.operator, left, right);
+                checkNumberOperands(expr.operator(), left, right);
                 return (double) left <= (double) right;
             case MINUS:
-                checkNumberOperands(expr.operator, left, right);
+                checkNumberOperands(expr.operator(), left, right);
                 return (double) left - (double) right;
             case PLUS:
                 if (left instanceof Double && right instanceof Double) {
@@ -255,13 +257,13 @@ class Interpreter implements Expr.Visitor<Object>,
                 /* Evaluating Expressions binary-plus < Evaluating Expressions string-wrong-type
         break;
                  */
-                throw new RuntimeError(expr.operator,
+                throw new RuntimeError(expr.operator(),
                         "Operands must be two numbers or two strings.");
             case SLASH:
-                checkNumberOperands(expr.operator, left, right);
+                checkNumberOperands(expr.operator(), left, right);
                 return (double) left / (double) right;
             case STAR:
-                checkNumberOperands(expr.operator, left, right);
+                checkNumberOperands(expr.operator(), left, right);
                 return (double) left * (double) right;
         }
 
@@ -271,21 +273,21 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Object visitCallExpr(Expr.Call expr) {
-        Object callee = evaluate(expr.callee);
+        Object callee = evaluate(expr.callee());
 
         List<Object> arguments = new ArrayList<>();
-        for (Expr argument : expr.arguments) { // [in-order]
+        for (Expr argument : expr.arguments()) { // [in-order]
             arguments.add(evaluate(argument));
         }
 
         if (!(callee instanceof LoxCallable)) {
-            throw new RuntimeError(expr.paren,
+            throw new RuntimeError(expr.paren(),
                     "Can only call functions and classes.");
         }
 
         LoxCallable function = (LoxCallable) callee;
         if (arguments.size() != function.arity()) {
-            throw new RuntimeError(expr.paren, "Expected "
+            throw new RuntimeError(expr.paren(), "Expected "
                     + function.arity() + " arguments but got "
                     + arguments.size() + ".");
         }
@@ -295,30 +297,30 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Object visitGetExpr(Expr.Get expr) {
-        Object object = evaluate(expr.object);
+        Object object = evaluate(expr.object());
         if (object instanceof LoxInstance) {
-            return ((LoxInstance) object).get(expr.name);
+            return ((LoxInstance) object).get(expr.name());
         }
 
-        throw new RuntimeError(expr.name,
+        throw new RuntimeError(expr.name(),
                 "Only instances have properties.");
     }
 
     @Override
     public Object visitGroupingExpr(Expr.Grouping expr) {
-        return evaluate(expr.expression);
+        return evaluate(expr.expression());
     }
 
     @Override
     public Object visitLiteralExpr(Expr.Literal expr) {
-        return expr.value;
+        return expr.value();
     }
 
     @Override
     public Object visitLogicalExpr(Expr.Logical expr) {
-        Object left = evaluate(expr.left);
+        Object left = evaluate(expr.left());
 
-        if (expr.operator.type == TokenType.OR) {
+        if (expr.operator().type == TokenType.OR) {
             if (isTruthy(left)) {
                 return left;
             }
@@ -328,20 +330,20 @@ class Interpreter implements Expr.Visitor<Object>,
             }
         }
 
-        return evaluate(expr.right);
+        return evaluate(expr.right());
     }
 
     @Override
     public Object visitSetExpr(Expr.Set expr) {
-        Object object = evaluate(expr.object);
+        Object object = evaluate(expr.object());
 
         if (!(object instanceof LoxInstance)) { // [order]
-            throw new RuntimeError(expr.name,
+            throw new RuntimeError(expr.name(),
                     "Only instances have fields.");
         }
 
-        Object value = evaluate(expr.value);
-        ((LoxInstance) object).set(expr.name, value);
+        Object value = evaluate(expr.value());
+        ((LoxInstance) object).set(expr.name(), value);
         return value;
     }
 
@@ -354,11 +356,11 @@ class Interpreter implements Expr.Visitor<Object>,
         LoxInstance object = (LoxInstance) environment.getAt(
                 distance - 1, "this");
 
-        LoxFunction method = superclass.findMethod(expr.method.lexeme);
+        LoxFunction method = superclass.findMethod(expr.method().lexeme);
 
         if (method == null) {
-            throw new RuntimeError(expr.method,
-                    "Undefined property '" + expr.method.lexeme + "'.");
+            throw new RuntimeError(expr.method(),
+                    "Undefined property '" + expr.method().lexeme + "'.");
         }
 
         return method.bind(object);
@@ -366,18 +368,18 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Object visitThisExpr(Expr.This expr) {
-        return lookUpVariable(expr.keyword, expr);
+        return lookUpVariable(expr.keyword(), expr);
     }
 
     @Override
     public Object visitUnaryExpr(Expr.Unary expr) {
-        Object right = evaluate(expr.right);
+        Object right = evaluate(expr.right());
 
-        switch (expr.operator.type) {
+        switch (expr.operator().type) {
             case BANG:
                 return !isTruthy(right);
             case MINUS:
-                checkNumberOperand(expr.operator, right);
+                checkNumberOperand(expr.operator(), right);
                 return -(double) right;
         }
 
@@ -388,9 +390,9 @@ class Interpreter implements Expr.Visitor<Object>,
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
         /* Statements and State visit-variable < Resolving and Binding call-look-up-variable
-    return environment.get(expr.name);
+    return environment.get(expr.name());
          */
-        return lookUpVariable(expr.name, expr);
+        return lookUpVariable(expr.name(), expr);
     }
 
     private Object lookUpVariable(Token name, Expr expr) {
