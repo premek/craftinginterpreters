@@ -1,4 +1,3 @@
-//> Functions return-exception
 package com.craftinginterpreters.lox;
 
 class Return extends RuntimeException {

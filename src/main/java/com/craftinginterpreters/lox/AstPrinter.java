@@ -1,27 +1,18 @@
-//> Representing Code ast-printer
 package com.craftinginterpreters.lox;
-//> omit
 
 import java.util.List;
-//< omit
 
 /* Representing Code ast-printer < Statements and State omit
 class AstPrinter implements Expr.Visitor<String> {
 */
-//> Statements and State omit
 class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
-//< Statements and State omit
   String print(Expr expr) {
     return expr.accept(this);
   }
-//> Statements and State omit
 
   String print(Stmt stmt) {
     return stmt.accept(this);
   }
-//< Statements and State omit
-//> visit-methods
-//> Statements and State omit
   @Override
   public String visitBlockStmt(Stmt.Block stmt) {
     StringBuilder builder = new StringBuilder();
@@ -34,19 +25,15 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     builder.append(")");
     return builder.toString();
   }
-//< Statements and State omit
-//> Classes omit
 
   @Override
   public String visitClassStmt(Stmt.Class stmt) {
     StringBuilder builder = new StringBuilder();
     builder.append("(class " + stmt.name.lexeme);
-//> Inheritance omit
 
     if (stmt.superclass != null) {
       builder.append(" < " + print(stmt.superclass));
     }
-//< Inheritance omit
 
     for (Stmt.Function method : stmt.methods) {
       builder.append(" " + print(method));
@@ -55,15 +42,11 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     builder.append(")");
     return builder.toString();
   }
-//< Classes omit
-//> Statements and State omit
 
   @Override
   public String visitExpressionStmt(Stmt.Expression stmt) {
     return parenthesize(";", stmt.expression);
   }
-//< Statements and State omit
-//> Functions omit
 
   @Override
   public String visitFunctionStmt(Stmt.Function stmt) {
@@ -84,8 +67,6 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     builder.append(")");
     return builder.toString();
   }
-//< Functions omit
-//> Control Flow omit
 
   @Override
   public String visitIfStmt(Stmt.If stmt) {
@@ -96,23 +77,17 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     return parenthesize2("if-else", stmt.condition, stmt.thenBranch,
         stmt.elseBranch);
   }
-//< Control Flow omit
-//> Statements and State omit
 
   @Override
   public String visitPrintStmt(Stmt.Print stmt) {
     return parenthesize("print", stmt.expression);
   }
-//< Statements and State omit
-//> Functions omit
 
   @Override
   public String visitReturnStmt(Stmt.Return stmt) {
     if (stmt.value == null) return "(return)";
     return parenthesize("return", stmt.value);
   }
-//< Functions omit
-//> Statements and State omit
 
   @Override
   public String visitVarStmt(Stmt.Var stmt) {
@@ -122,41 +97,32 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
 
     return parenthesize2("var", stmt.name, "=", stmt.initializer);
   }
-//< Statements and State omit
-//> Control Flow omit
 
   @Override
   public String visitWhileStmt(Stmt.While stmt) {
     return parenthesize2("while", stmt.condition, stmt.body);
   }
-//< Control Flow omit
-//> Statements and State omit
 
   @Override
   public String visitAssignExpr(Expr.Assign expr) {
     return parenthesize2("=", expr.name.lexeme, expr.value);
   }
-//< Statements and State omit
 
   @Override
   public String visitBinaryExpr(Expr.Binary expr) {
     return parenthesize(expr.operator.lexeme,
                         expr.left, expr.right);
   }
-//> Functions omit
 
   @Override
   public String visitCallExpr(Expr.Call expr) {
     return parenthesize2("call", expr.callee, expr.arguments);
   }
-//< Functions omit
-//> Classes omit
 
   @Override
   public String visitGetExpr(Expr.Get expr) {
     return parenthesize2(".", expr.object, expr.name.lexeme);
   }
-//< Classes omit
 
   @Override
   public String visitGroupingExpr(Expr.Grouping expr) {
@@ -168,49 +134,37 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
     if (expr.value == null) return "nil";
     return expr.value.toString();
   }
-//> Control Flow omit
 
   @Override
   public String visitLogicalExpr(Expr.Logical expr) {
     return parenthesize(expr.operator.lexeme, expr.left, expr.right);
   }
-//< Control Flow omit
-//> Classes omit
 
   @Override
   public String visitSetExpr(Expr.Set expr) {
     return parenthesize2("=",
         expr.object, expr.name.lexeme, expr.value);
   }
-//< Classes omit
-//> Inheritance omit
 
   @Override
   public String visitSuperExpr(Expr.Super expr) {
     return parenthesize2("super", expr.method);
   }
-//< Inheritance omit
-//> Classes omit
 
   @Override
   public String visitThisExpr(Expr.This expr) {
     return "this";
   }
-//< Classes omit
 
   @Override
   public String visitUnaryExpr(Expr.Unary expr) {
     return parenthesize(expr.operator.lexeme, expr.right);
   }
-//> Statements and State omit
 
   @Override
   public String visitVariableExpr(Expr.Variable expr) {
     return expr.name.lexeme;
   }
-//< Statements and State omit
-//< visit-methods
-//> print-utilities
   private String parenthesize(String name, Expr... exprs) {
     StringBuilder builder = new StringBuilder();
 
@@ -223,8 +177,6 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
 
     return builder.toString();
   }
-//< print-utilities
-//> omit
   // Note: AstPrinting other types of syntax trees is not shown in the
   // book, but this is provided here as a reference for those reading
   // the full code.
@@ -243,10 +195,8 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
       builder.append(" ");
       if (part instanceof Expr) {
         builder.append(((Expr)part).accept(this));
-//> Statements and State omit
       } else if (part instanceof Stmt) {
         builder.append(((Stmt) part).accept(this));
-//< Statements and State omit
       } else if (part instanceof Token) {
         builder.append(((Token) part).lexeme);
       } else if (part instanceof List) {
@@ -256,7 +206,6 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
       }
     }
   }
-//< omit
 /* Representing Code printer-main < Representing Code omit
   public static void main(String[] args) {
     Expr expression = new Expr.Binary(
