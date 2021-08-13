@@ -86,42 +86,42 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
-        executeBlock(stmt.statements, new Environment(environment));
+        executeBlock(stmt.statements(), new Environment(environment));
         return null;
     }
 
     @Override
     public Void visitClassStmt(Stmt.Class stmt) {
         Object superclass = null;
-        if (stmt.superclass != null) {
-            superclass = evaluate(stmt.superclass);
+        if (stmt.superclass() != null) {
+            superclass = evaluate(stmt.superclass());
             if (!(superclass instanceof LoxClass)) {
-                throw new RuntimeError(stmt.superclass.name,
+                throw new RuntimeError(stmt.superclass().name,
                         "Superclass must be a class.");
             }
         }
 
-        environment.define(stmt.name.lexeme, null);
+        environment.define(stmt.name().lexeme, null);
 
-        if (stmt.superclass != null) {
+        if (stmt.superclass() != null) {
             environment = new Environment(environment);
             environment.define("super", superclass);
         }
 
         Map<String, LoxFunction> methods = new HashMap<>();
-        for (Stmt.Function method : stmt.methods) {
+        for (Stmt.Function method : stmt.methods()) {
             /* Classes interpret-methods < Classes interpreter-method-initializer
       LoxFunction function = new LoxFunction(method, environment);
              */
             LoxFunction function = new LoxFunction(method, environment,
-                    method.name.lexeme.equals("init"));
-            methods.put(method.name.lexeme, function);
+                    method.name().lexeme.equals("init"));
+            methods.put(method.name().lexeme, function);
         }
 
         /* Classes interpret-methods < Inheritance interpreter-construct-class
-    LoxClass klass = new LoxClass(stmt.name.lexeme, methods);
+    LoxClass klass = new LoxClass(stmt.name().lexeme, methods);
          */
-        LoxClass klass = new LoxClass(stmt.name.lexeme,
+        LoxClass klass = new LoxClass(stmt.name().lexeme,
                 (LoxClass) superclass, methods);
 
         if (superclass != null) {
@@ -129,15 +129,15 @@ class Interpreter implements Expr.Visitor<Object>,
         }
 
         /* Classes interpreter-visit-class < Classes interpret-methods
-    LoxClass klass = new LoxClass(stmt.name.lexeme);
+    LoxClass klass = new LoxClass(stmt.name().lexeme);
          */
-        environment.assign(stmt.name, klass);
+        environment.assign(stmt.name(), klass);
         return null;
     }
 
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) {
-        evaluate(stmt.expression);
+        evaluate(stmt.expression());
         return null;
     }
 
@@ -151,23 +151,23 @@ class Interpreter implements Expr.Visitor<Object>,
          */
         LoxFunction function = new LoxFunction(stmt, environment,
                 false);
-        environment.define(stmt.name.lexeme, function);
+        environment.define(stmt.name().lexeme, function);
         return null;
     }
 
     @Override
     public Void visitIfStmt(Stmt.If stmt) {
-        if (isTruthy(evaluate(stmt.condition))) {
-            execute(stmt.thenBranch);
-        } else if (stmt.elseBranch != null) {
-            execute(stmt.elseBranch);
+        if (isTruthy(evaluate(stmt.condition()))) {
+            execute(stmt.thenBranch());
+        } else if (stmt.elseBranch() != null) {
+            execute(stmt.elseBranch());
         }
         return null;
     }
 
     @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
-        Object value = evaluate(stmt.expression);
+        Object value = evaluate(stmt.expression());
         System.out.println(stringify(value));
         return null;
     }
@@ -175,8 +175,8 @@ class Interpreter implements Expr.Visitor<Object>,
     @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
         Object value = null;
-        if (stmt.value != null) {
-            value = evaluate(stmt.value);
+        if (stmt.value() != null) {
+            value = evaluate(stmt.value());
         }
 
         throw new Return(value);
@@ -185,18 +185,18 @@ class Interpreter implements Expr.Visitor<Object>,
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {
         Object value = null;
-        if (stmt.initializer != null) {
-            value = evaluate(stmt.initializer);
+        if (stmt.initializer() != null) {
+            value = evaluate(stmt.initializer());
         }
 
-        environment.define(stmt.name.lexeme, value);
+        environment.define(stmt.name().lexeme, value);
         return null;
     }
 
     @Override
     public Void visitWhileStmt(Stmt.While stmt) {
-        while (isTruthy(evaluate(stmt.condition))) {
-            execute(stmt.body);
+        while (isTruthy(evaluate(stmt.condition()))) {
+            execute(stmt.body());
         }
         return null;
     }

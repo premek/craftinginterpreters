@@ -45,7 +45,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
         beginScope();
-        resolve(stmt.statements);
+        resolve(stmt.statements());
         endScope();
         return null;
     }
@@ -55,21 +55,21 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         ClassType enclosingClass = currentClass;
         currentClass = ClassType.CLASS;
 
-        declare(stmt.name);
-        define(stmt.name);
+        declare(stmt.name());
+        define(stmt.name());
 
-        if (stmt.superclass != null
-                && stmt.name.lexeme.equals(stmt.superclass.name.lexeme)) {
-            Lox.error(stmt.superclass.name,
+        if (stmt.superclass() != null
+                && stmt.name().lexeme.equals(stmt.superclass().name.lexeme)) {
+            Lox.error(stmt.superclass().name,
                     "A class can't inherit from itself.");
         }
 
-        if (stmt.superclass != null) {
+        if (stmt.superclass() != null) {
             currentClass = ClassType.SUBCLASS;
-            resolve(stmt.superclass);
+            resolve(stmt.superclass());
         }
 
-        if (stmt.superclass != null) {
+        if (stmt.superclass() != null) {
             beginScope();
             scopes.peek().put("super", true);
         }
@@ -77,9 +77,9 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         beginScope();
         scopes.peek().put("this", true);
 
-        for (Stmt.Function method : stmt.methods) {
+        for (Stmt.Function method : stmt.methods()) {
             FunctionType declaration = FunctionType.METHOD;
-            if (method.name.lexeme.equals("init")) {
+            if (method.name().lexeme.equals("init")) {
                 declaration = FunctionType.INITIALIZER;
             }
 
@@ -88,7 +88,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
         endScope();
 
-        if (stmt.superclass != null) {
+        if (stmt.superclass() != null) {
             endScope();
         }
 
@@ -98,14 +98,14 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) {
-        resolve(stmt.expression);
+        resolve(stmt.expression());
         return null;
     }
 
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-        declare(stmt.name);
-        define(stmt.name);
+        declare(stmt.name());
+        define(stmt.name());
 
         /* Resolving and Binding visit-function-stmt < Resolving and Binding pass-function-type
     resolveFunction(stmt);
@@ -116,33 +116,33 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitIfStmt(Stmt.If stmt) {
-        resolve(stmt.condition);
-        resolve(stmt.thenBranch);
-        if (stmt.elseBranch != null) {
-            resolve(stmt.elseBranch);
+        resolve(stmt.condition());
+        resolve(stmt.thenBranch());
+        if (stmt.elseBranch() != null) {
+            resolve(stmt.elseBranch());
         }
         return null;
     }
 
     @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
-        resolve(stmt.expression);
+        resolve(stmt.expression());
         return null;
     }
 
     @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
         if (currentFunction == FunctionType.NONE) {
-            Lox.error(stmt.keyword, "Can't return from top-level code.");
+            Lox.error(stmt.keyword(), "Can't return from top-level code.");
         }
 
-        if (stmt.value != null) {
+        if (stmt.value() != null) {
             if (currentFunction == FunctionType.INITIALIZER) {
-                Lox.error(stmt.keyword,
+                Lox.error(stmt.keyword(),
                         "Can't return a value from an initializer.");
             }
 
-            resolve(stmt.value);
+            resolve(stmt.value());
         }
 
         return null;
@@ -150,18 +150,18 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {
-        declare(stmt.name);
-        if (stmt.initializer != null) {
-            resolve(stmt.initializer);
+        declare(stmt.name());
+        if (stmt.initializer() != null) {
+            resolve(stmt.initializer());
         }
-        define(stmt.name);
+        define(stmt.name());
         return null;
     }
 
     @Override
     public Void visitWhileStmt(Stmt.While stmt) {
-        resolve(stmt.condition);
-        resolve(stmt.body);
+        resolve(stmt.condition());
+        resolve(stmt.body());
         return null;
     }
 
@@ -282,11 +282,11 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         currentFunction = type;
 
         beginScope();
-        for (Token param : function.params) {
+        for (Token param : function.params()) {
             declare(param);
             define(param);
         }
-        resolve(function.body);
+        resolve(function.body());
         endScope();
         currentFunction = enclosingFunction;
     }

@@ -9,27 +9,28 @@ import static com.craftinginterpreters.lox.TokenType.*; // [static-import]
 
 class Scanner {
 
-    private static final Map<String, TokenType> keywords;
+    private static final Map<String, TokenType> keywords = new HashMap<String, TokenType>() {
+        {
 
-    static {
-        keywords = new HashMap<>();
-        keywords.put("and", AND);
-        keywords.put("class", CLASS);
-        keywords.put("else", ELSE);
-        keywords.put("false", FALSE);
-        keywords.put("for", FOR);
-        keywords.put("fun", FUN);
-        keywords.put("if", IF);
-        keywords.put("nil", NIL);
-        keywords.put("or", OR);
-        keywords.put("print", PRINT);
-        keywords.put("return", RETURN);
-        keywords.put("super", SUPER);
-        keywords.put("this", THIS);
-        keywords.put("true", TRUE);
-        keywords.put("var", VAR);
-        keywords.put("while", WHILE);
-    }
+            put("and", AND);
+            put("class", CLASS);
+            put("else", ELSE);
+            put("false", FALSE);
+            put("for", FOR);
+            put("fun", FUN);
+            put("if", IF);
+            put("nil", NIL);
+            put("or", OR);
+            put("print", PRINT);
+            put("return", RETURN);
+            put("super", SUPER);
+            put("this", THIS);
+            put("true", TRUE);
+            put("var", VAR);
+            put("while", WHILE);
+        }
+    };
+
     private final String source;
     private final List<Token> tokens = new ArrayList<>();
     private int start = 0;
