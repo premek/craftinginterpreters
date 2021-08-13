@@ -17,7 +17,7 @@ public class Lox {
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
             System.out.println("Usage: jlox [script]");
-            System.exit(64); // [64]
+            System.exit(64);
         } else if (args.length == 1) {
             runFile(args[0]);
         } else {
@@ -42,7 +42,7 @@ public class Lox {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
 
-        for (;;) { // [repl]
+        for (;;) {
             System.out.print("> ");
             String line = reader.readLine();
             if (line == null) {
@@ -56,17 +56,7 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
-        /* Scanning run < Parsing Expressions print-ast
-
-    // For now, just print the tokens.
-    for (Token token : tokens) {
-      System.out.println(token);
-    }
-         */
         Parser parser = new Parser(tokens);
-        /* Parsing Expressions print-ast < Statements and State parse-statements
-    Expr expression = parser.parse();
-         */
         List<Stmt> statements = parser.parse();
 
         // Stop if there was a syntax error.
@@ -82,12 +72,6 @@ public class Lox {
             return;
         }
 
-        /* Parsing Expressions print-ast < Evaluating Expressions interpreter-interpret
-    System.out.println(new AstPrinter().print(expression));
-         */
- /* Evaluating Expressions interpreter-interpret < Statements and State interpret-statements
-    interpreter.interpret(expression);
-         */
         interpreter.interpret(statements);
     }
 

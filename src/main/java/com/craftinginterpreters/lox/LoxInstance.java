@@ -13,24 +13,21 @@ class LoxInstance {
     }
 
     Object get(Token name) {
-        if (fields.containsKey(name.lexeme)) {
-            return fields.get(name.lexeme);
+        if (fields.containsKey(name.lexeme())) {
+            return fields.get(name.lexeme());
         }
 
-        LoxFunction method = klass.findMethod(name.lexeme);
-        /* Classes lox-instance-get-method < Classes lox-instance-bind-method
-    if (method != null) return method;
-         */
+        LoxFunction method = klass.findMethod(name.lexeme());
         if (method != null) {
             return method.bind(this);
         }
 
-        throw new RuntimeError(name, // [hidden]
-                "Undefined property '" + name.lexeme + "'.");
+        throw new RuntimeError(name,
+                "Undefined property '" + name.lexeme() + "'.");
     }
 
     void set(Token name, Object value) {
-        fields.put(name.lexeme, value);
+        fields.put(name.lexeme(), value);
     }
 
     @Override

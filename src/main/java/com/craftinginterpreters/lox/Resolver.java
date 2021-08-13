@@ -17,9 +17,6 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private enum FunctionType {
         NONE,
-        /* Resolving and Binding function-type < Classes function-type-method
-    FUNCTION
-         */
         FUNCTION,
         INITIALIZER,
         METHOD
@@ -27,9 +24,6 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private enum ClassType {
         NONE,
-        /* Classes class-type < Inheritance class-type-subclass
-    CLASS
-         */
         CLASS,
         SUBCLASS
     }
@@ -83,7 +77,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
                 declaration = FunctionType.INITIALIZER;
             }
 
-            resolveFunction(method, declaration); // [local]
+            resolveFunction(method, declaration);
         }
 
         endScope();
@@ -107,9 +101,6 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         declare(stmt.name());
         define(stmt.name());
 
-        /* Resolving and Binding visit-function-stmt < Resolving and Binding pass-function-type
-    resolveFunction(stmt);
-         */
         resolveFunction(stmt, FunctionType.FUNCTION);
         return null;
     }
@@ -273,9 +264,6 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         expr.accept(this);
     }
 
-    /* Resolving and Binding resolve-function < Resolving and Binding set-current-function
-  private void resolveFunction(Stmt.Function function) {
-     */
     private void resolveFunction(
             Stmt.Function function, FunctionType type) {
         FunctionType enclosingFunction = currentFunction;

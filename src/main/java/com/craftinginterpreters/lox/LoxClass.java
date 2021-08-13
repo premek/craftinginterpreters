@@ -3,24 +3,12 @@ package com.craftinginterpreters.lox;
 import java.util.List;
 import java.util.Map;
 
-/* Classes lox-class < Classes lox-class-callable
-class LoxClass {
- */
 class LoxClass implements LoxCallable {
 
     final String name;
     final LoxClass superclass;
-    /* Classes lox-class < Classes lox-class-methods
-
-  LoxClass(String name) {
-    this.name = name;
-  }
-     */
     private final Map<String, LoxFunction> methods;
 
-    /* Classes lox-class-methods < Inheritance lox-class-constructor
-  LoxClass(String name, Map<String, LoxFunction> methods) {
-     */
     LoxClass(String name, LoxClass superclass,
             Map<String, LoxFunction> methods) {
         this.superclass = superclass;
@@ -59,9 +47,6 @@ class LoxClass implements LoxCallable {
 
     @Override
     public int arity() {
-        /* Classes lox-class-call-arity < Classes lox-initializer-arity
-    return 0;
-         */
         LoxFunction initializer = findMethod("init");
         if (initializer == null) {
             return 0;

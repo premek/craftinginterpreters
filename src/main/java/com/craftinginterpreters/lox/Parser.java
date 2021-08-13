@@ -18,31 +18,16 @@ class Parser {
         this.tokens = tokens;
     }
 
-    /* Parsing Expressions parse < Statements and State parse
-  Expr parse() {
-    try {
-      return expression();
-    } catch (ParseError error) {
-      return null;
-    }
-  }
-     */
     List<Stmt> parse() {
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
-            /* Statements and State parse < Statements and State parse-declaration
-      statements.add(statement());
-             */
             statements.add(declaration());
         }
 
-        return statements; // [parse-error-handling]
+        return statements;
     }
 
     private Expr expression() {
-        /* Parsing Expressions expression < Statements and State expression
-    return equality();
-         */
         return assignment();
     }
 
@@ -84,9 +69,6 @@ class Parser {
 
         consume(RIGHT_BRACE, "Expect '}' after class body.");
 
-        /* Classes parse-class-declaration < Inheritance construct-class-ast
-    return new Stmt.Class(name, methods);
-         */
         return new Stmt.Class(name, superclass, methods);
     }
 
@@ -116,9 +98,6 @@ class Parser {
     private Stmt forStatement() {
         consume(LEFT_PAREN, "Expect '(' after 'for'.");
 
-        /* Control Flow for-statement < Control Flow for-initializer
-    // More here...
-         */
         Stmt initializer;
         if (match(SEMICOLON)) {
             initializer = null;
@@ -163,7 +142,7 @@ class Parser {
     private Stmt ifStatement() {
         consume(LEFT_PAREN, "Expect '(' after 'if'.");
         Expr condition = expression();
-        consume(RIGHT_PAREN, "Expect ')' after if condition."); // [parens]
+        consume(RIGHT_PAREN, "Expect ')' after if condition.");
 
         Stmt thenBranch = statement();
         Stmt elseBranch = null;
@@ -251,9 +230,6 @@ class Parser {
     }
 
     private Expr assignment() {
-        /* Statements and State parse-assignment < Control Flow or-in-assignment
-    Expr expr = equality();
-         */
         Expr expr = or();
 
         if (match(EQUAL)) {
@@ -268,7 +244,7 @@ class Parser {
                 return new Expr.Set(get.object(), get.name(), value);
             }
 
-            error(equals, "Invalid assignment target."); // [no-throw]
+            error(equals, "Invalid assignment target.");
         }
 
         return expr;
@@ -353,9 +329,6 @@ class Parser {
             return new Expr.Unary(operator, right);
         }
 
-        /* Parsing Expressions unary < Functions unary-call
-    return primary();
-         */
         return call();
     }
 
@@ -379,7 +352,7 @@ class Parser {
     private Expr call() {
         Expr expr = primary();
 
-        while (true) { // [while-true]
+        while (true) {
             if (match(LEFT_PAREN)) {
                 expr = finishCall(expr);
             } else if (match(DOT)) {

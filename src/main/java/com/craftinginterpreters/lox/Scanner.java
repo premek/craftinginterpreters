@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.craftinginterpreters.lox.TokenType.*; // [static-import]
+import static com.craftinginterpreters.lox.TokenType.*;
 
 class Scanner {
 
@@ -84,7 +84,7 @@ class Scanner {
                 break;
             case '*':
                 addToken(STAR);
-                break; // [slash]
+                break;
             case '!':
                 addToken(match('=') ? BANG_EQUAL : BANG);
                 break;
@@ -123,9 +123,6 @@ class Scanner {
                 break;
 
             default:
-                /* Scanning char-error < Scanning digit-start
-        Lox.error(line, "Unexpected character.");
-                 */
                 if (isDigit(c)) {
                     number();
                 } else if (isAlpha(c)) {
@@ -142,9 +139,6 @@ class Scanner {
             advance();
         }
 
-        /* Scanning identifier < Scanning keyword-type
-    addToken(IDENTIFIER);
-         */
         String text = source.substring(start, current);
         TokenType type = keywords.get(text);
         if (type == null) {
@@ -217,7 +211,7 @@ class Scanner {
             return '\0';
         }
         return source.charAt(current + 1);
-    } // [peek-next]
+    }
 
     private boolean isAlpha(char c) {
         return (c >= 'a' && c <= 'z')
@@ -231,7 +225,7 @@ class Scanner {
 
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
-    } // [is-digit]
+    }
 
     private boolean isAtEnd() {
         return current >= source.length();

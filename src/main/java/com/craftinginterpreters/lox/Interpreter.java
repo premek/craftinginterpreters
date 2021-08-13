@@ -5,15 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/* Evaluating Expressions interpreter-class < Statements and State interpreter
-class Interpreter implements Expr.Visitor<Object> {
- */
 class Interpreter implements Expr.Visitor<Object>,
         Stmt.Visitor<Void> {
 
-    /* Statements and State environment-field < Functions global-environment
-  private Environment environment = new Environment();
-     */
     final Environment globals = new Environment();
     private Environment environment = globals;
     private final Map<Expr, Integer> locals = new HashMap<>();
@@ -38,16 +32,6 @@ class Interpreter implements Expr.Visitor<Object>,
         });
     }
 
-    /* Evaluating Expressions interpret < Statements and State interpret
-  void interpret(Expr expression) { // [void]
-    try {
-      Object value = evaluate(expression);
-      System.out.println(stringify(value));
-    } catch (RuntimeError error) {
-      Lox.runtimeError(error);
-    }
-  }
-     */
     void interpret(List<Stmt> statements) {
         try {
             for (Stmt statement : statements) {
@@ -112,17 +96,11 @@ class Interpreter implements Expr.Visitor<Object>,
 
         Map<String, LoxFunction> methods = new HashMap<>();
         for (Stmt.Function method : stmt.methods()) {
-            /* Classes interpret-methods < Classes interpreter-method-initializer
-      LoxFunction function = new LoxFunction(method, environment);
-             */
             LoxFunction function = new LoxFunction(method, environment,
                     method.name().lexeme().equals("init"));
             methods.put(method.name().lexeme(), function);
         }
 
-        /* Classes interpret-methods < Inheritance interpreter-construct-class
-    LoxClass klass = new LoxClass(stmt.name().lexeme(), methods);
-         */
         LoxClass klass = new LoxClass(stmt.name().lexeme(),
                 (LoxClass) superclass, methods);
 
@@ -130,9 +108,6 @@ class Interpreter implements Expr.Visitor<Object>,
             environment = environment.enclosing;
         }
 
-        /* Classes interpreter-visit-class < Classes interpret-methods
-    LoxClass klass = new LoxClass(stmt.name().lexeme());
-         */
         environment.assign(stmt.name(), klass);
         return null;
     }
@@ -145,12 +120,6 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
-        /* Functions visit-function < Functions visit-closure
-    LoxFunction function = new LoxFunction(stmt);
-         */
- /* Functions visit-closure < Classes construct-function
-    LoxFunction function = new LoxFunction(stmt, environment);
-         */
         LoxFunction function = new LoxFunction(stmt, environment,
                 false);
         environment.define(stmt.name().lexeme(), function);
@@ -206,9 +175,6 @@ class Interpreter implements Expr.Visitor<Object>,
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
         Object value = evaluate(expr.value());
-        /* Statements and State visit-assign < Resolving and Binding resolved-assign
-    environment.assign(expr.name(), value);
-         */
 
         Integer distance = locals.get(expr);
         if (distance != null) {
@@ -223,7 +189,7 @@ class Interpreter implements Expr.Visitor<Object>,
     @Override
     public Object visitBinaryExpr(Expr.Binary expr) {
         Object left = evaluate(expr.left());
-        Object right = evaluate(expr.right()); // [left]
+        Object right = evaluate(expr.right());
 
         switch (expr.operator().type()) {
             case BANG_EQUAL:
@@ -248,15 +214,12 @@ class Interpreter implements Expr.Visitor<Object>,
             case PLUS:
                 if (left instanceof Double && right instanceof Double) {
                     return (double) left + (double) right;
-                } // [plus]
+                }
 
                 if (left instanceof String && right instanceof String) {
                     return (String) left + (String) right;
                 }
 
-                /* Evaluating Expressions binary-plus < Evaluating Expressions string-wrong-type
-        break;
-                 */
                 throw new RuntimeError(expr.operator(),
                         "Operands must be two numbers or two strings.");
             case SLASH:
@@ -276,7 +239,7 @@ class Interpreter implements Expr.Visitor<Object>,
         Object callee = evaluate(expr.callee());
 
         List<Object> arguments = new ArrayList<>();
-        for (Expr argument : expr.arguments()) { // [in-order]
+        for (Expr argument : expr.arguments()) {
             arguments.add(evaluate(argument));
         }
 
@@ -337,7 +300,7 @@ class Interpreter implements Expr.Visitor<Object>,
     public Object visitSetExpr(Expr.Set expr) {
         Object object = evaluate(expr.object());
 
-        if (!(object instanceof LoxInstance)) { // [order]
+        if (!(object instanceof LoxInstance)) {
             throw new RuntimeError(expr.name(),
                     "Only instances have fields.");
         }
@@ -389,9 +352,6 @@ class Interpreter implements Expr.Visitor<Object>,
 
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
-        /* Statements and State visit-variable < Resolving and Binding call-look-up-variable
-    return environment.get(expr.name());
-         */
         return lookUpVariable(expr.name(), expr);
     }
 
@@ -416,7 +376,6 @@ class Interpreter implements Expr.Visitor<Object>,
         if (left instanceof Double && right instanceof Double) {
             return;
         }
-        // [operand]
         throw new RuntimeError(operator, "Operands must be numbers.");
     }
 
