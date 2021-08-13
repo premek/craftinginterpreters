@@ -4,32 +4,37 @@ import java.util.HashMap;
 import java.util.Map;
 
 class LoxInstance {
-  private LoxClass klass;
-  private final Map<String, Object> fields = new HashMap<>();
 
-  LoxInstance(LoxClass klass) {
-    this.klass = klass;
-  }
+    private LoxClass klass;
+    private final Map<String, Object> fields = new HashMap<>();
 
-  Object get(Token name) {
-    if (fields.containsKey(name.lexeme)) {
-      return fields.get(name.lexeme);
+    LoxInstance(LoxClass klass) {
+        this.klass = klass;
     }
 
-    LoxFunction method = klass.findMethod(name.lexeme);
-/* Classes lox-instance-get-method < Classes lox-instance-bind-method
-    if (method != null) return method;
-*/
-    if (method != null) return method.bind(this);
+    Object get(Token name) {
+        if (fields.containsKey(name.lexeme)) {
+            return fields.get(name.lexeme);
+        }
 
-    throw new RuntimeError(name, // [hidden]
-        "Undefined property '" + name.lexeme + "'.");
-  }
-  void set(Token name, Object value) {
-    fields.put(name.lexeme, value);
-  }
-  @Override
-  public String toString() {
-    return klass.name + " instance";
-  }
+        LoxFunction method = klass.findMethod(name.lexeme);
+        /* Classes lox-instance-get-method < Classes lox-instance-bind-method
+    if (method != null) return method;
+         */
+        if (method != null) {
+            return method.bind(this);
+        }
+
+        throw new RuntimeError(name, // [hidden]
+                "Undefined property '" + name.lexeme + "'.");
+    }
+
+    void set(Token name, Object value) {
+        fields.put(name.lexeme, value);
+    }
+
+    @Override
+    public String toString() {
+        return klass.name + " instance";
+    }
 }
