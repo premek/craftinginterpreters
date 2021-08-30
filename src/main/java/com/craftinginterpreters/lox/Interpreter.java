@@ -14,17 +14,20 @@ public class Interpreter {
     Interpreter() {
         globals.define("clock", new LoxCallable() {
             
+            @Override
             public int arity() {
                 return 0;
             }
 
             
+            @Override
             public Object call(Interpreter interpreter,
                     List<Object> arguments) {
                 return (double) System.currentTimeMillis() / 1000.0;
             }
 
             
+            @Override
             public String toString() {
                 return "<native fn>";
             }
@@ -33,9 +36,7 @@ public class Interpreter {
 
     void interpret(List<Stmt> statements) {
         try {
-            for (Stmt statement : statements) {
-                execute(statement);
-            }
+            statements.forEach(this::execute);
         }
         catch (RuntimeError error) {
             Lox.runtimeError(error);
@@ -83,9 +84,7 @@ public class Interpreter {
         try {
             this.environment = environment;
 
-            for (Stmt statement : statements) {
-                execute(statement);
-            }
+            statements.forEach(this::execute);
         }
         finally {
             this.environment = previous;
@@ -213,47 +212,53 @@ public class Interpreter {
         Object left = evaluate(expr.left());
         Object right = evaluate(expr.right());
 
-        switch (expr.operator().type()) {
-            case BANG_EQUAL:
-                return !isEqual(left, right);
-            case EQUAL_EQUAL:
-                return isEqual(left, right);
-            case GREATER:
+        return switch (expr.operator().type()) {
+            case BANG_EQUAL -> !isEqual(left, right);
+            
+            case EQUAL_EQUAL -> isEqual(left, right);
+            
+            case GREATER -> {
                 checkNumberOperands(expr.operator(), left, right);
-                return (double) left > (double) right;
-            case GREATER_EQUAL:
+                yield (double) left > (double) right;
+            }
+            case GREATER_EQUAL -> {
                 checkNumberOperands(expr.operator(), left, right);
-                return (double) left >= (double) right;
-            case LESS:
+                yield (double) left >= (double) right;
+            }
+            case LESS -> {
                 checkNumberOperands(expr.operator(), left, right);
-                return (double) left < (double) right;
-            case LESS_EQUAL:
+                yield (double) left < (double) right;
+            }
+            case LESS_EQUAL -> {
                 checkNumberOperands(expr.operator(), left, right);
-                return (double) left <= (double) right;
-            case MINUS:
+                yield (double) left <= (double) right;
+            }
+            case MINUS -> {
                 checkNumberOperands(expr.operator(), left, right);
-                return (double) left - (double) right;
-            case PLUS:
+                yield (double) left - (double) right;
+            }
+            case PLUS -> {
                 if (left instanceof Double && right instanceof Double) {
-                    return (double) left + (double) right;
+                    yield (double) left + (double) right;
                 }
 
                 if (left instanceof String && right instanceof String) {
-                    return (String) left + (String) right;
+                    yield (String) left + (String) right;
                 }
 
                 throw new RuntimeError(expr.operator(),
                         "Operands must be two numbers or two strings.");
-            case SLASH:
+            }
+            case SLASH -> {
                 checkNumberOperands(expr.operator(), left, right);
-                return (double) left / (double) right;
-            case STAR:
+                yield (double) left / (double) right;
+            }
+            case STAR -> {
                 checkNumberOperands(expr.operator(), left, right);
-                return (double) left * (double) right;
-        }
-
-        // Unreachable.
-        return null;
+                yield (double) left * (double) right;
+            }
+            default -> throw new RuntimeError(expr.operator(), "Unexpected operator"); // Unreachable.
+        };
     }
 
     
@@ -360,16 +365,16 @@ public class Interpreter {
     public Object visitUnaryExpr(Expr.Unary expr) {
         Object right = evaluate(expr.right());
 
-        switch (expr.operator().type()) {
-            case BANG:
-                return !isTruthy(right);
-            case MINUS:
+        return switch (expr.operator().type()) {
+            case BANG -> !isTruthy(right);
+            
+            case MINUS -> {
                 checkNumberOperand(expr.operator(), right);
-                return -(double) right;
-        }
-
-        // Unreachable.
-        return null;
+                yield -(double) right;
+            }
+            
+            default -> throw new RuntimeError(expr.operator(), "Unexpected operator"); // Unreachable.
+        };
     }
 
     

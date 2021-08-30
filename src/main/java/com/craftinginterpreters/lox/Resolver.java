@@ -3,6 +3,7 @@ package com.craftinginterpreters.lox;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 
 public class Resolver {
@@ -31,9 +32,7 @@ public class Resolver {
     private ClassType currentClass = ClassType.NONE;
 
     void resolve(List<Stmt> statements) {
-        for (Stmt statement : statements) {
-            resolve(statement);
-        }
+        statements.forEach(this::resolve);
     }
 
     interface StmtResolver<T extends Stmt> {
@@ -45,6 +44,7 @@ public class Resolver {
     public class BlockResolver implements StmtResolver<Stmt.Block> {
 
         
+        @Override
         public void resolveStmt(Stmt.Block stmt) {
             beginScope();
             resolve(stmt.statements());
@@ -192,9 +192,7 @@ public class Resolver {
     public Void visitCallExpr(Expr.Call expr) {
         resolve(expr.callee());
 
-        for (Expr argument : expr.arguments()) {
-            resolve(argument);
-        }
+        expr.arguments().forEach(this::resolve);
 
         return null;
     }
@@ -264,10 +262,8 @@ public class Resolver {
 
     
     public Void visitVariableExpr(Expr.Variable expr) {
-        if (!scopes.isEmpty()
-                && scopes.peek().get(expr.name().lexeme()) == Boolean.FALSE) {
-            Lox.error(expr.name(),
-                    "Can't read local variable in its own initializer.");
+        if (!scopes.isEmpty() && Objects.equals(scopes.peek().get(expr.name().lexeme()), Boolean.FALSE)) {
+            Lox.error(expr.name(), "Can't read local variable in its own initializer.");
         }
 
         resolveLocal(expr, expr.name());
@@ -321,7 +317,7 @@ public class Resolver {
     }
 
     private void beginScope() {
-        scopes.push(new HashMap<String, Boolean>());
+        scopes.push(new HashMap<>());
     }
 
     private void endScope() {

@@ -49,14 +49,14 @@ public class AstPrinter {
 
     public String visitClassStmt(Stmt.Class stmt) {
         StringBuilder builder = new StringBuilder();
-        builder.append("(class " + stmt.name().lexeme());
+        builder.append("(class ").append(stmt.name().lexeme());
 
         if (stmt.superclass() != null) {
-            builder.append(" < " + print(stmt.superclass()));
+            builder.append(" < ").append(print(stmt.superclass()));
         }
 
         for (Stmt.Function method : stmt.methods()) {
-            builder.append(" " + print(method));
+            builder.append(" ").append(print(method));
         }
 
         builder.append(")");
@@ -69,7 +69,7 @@ public class AstPrinter {
 
     public String visitFunctionStmt(Stmt.Function stmt) {
         StringBuilder builder = new StringBuilder();
-        builder.append("(fun " + stmt.name().lexeme() + "(");
+        builder.append("(fun ").append(stmt.name().lexeme()).append("(");
 
         for (Token param : stmt.params()) {
             if (param != stmt.params().get(0)) {
