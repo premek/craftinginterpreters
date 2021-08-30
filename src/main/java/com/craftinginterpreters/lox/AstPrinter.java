@@ -2,30 +2,51 @@ package com.craftinginterpreters.lox;
 
 import java.util.List;
 
-class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
+public class AstPrinter {
 
     String print(Expr expr) {
-        return expr.accept(this);
+        return switch (expr) {
+            case Expr.Assign e -> visitAssignExpr(e);
+            case Expr.Binary e -> visitBinaryExpr(e);
+            case Expr.Call e -> visitCallExpr(e);
+            case Expr.Get e -> visitGetExpr(e);
+            case Expr.Grouping e -> visitGroupingExpr(e);
+            case Expr.Literal e -> visitLiteralExpr(e);
+            case Expr.Logical e -> visitLogicalExpr(e);
+            case Expr.Set e -> visitSetExpr(e);
+            case Expr.Super e -> visitSuperExpr(e);
+            case Expr.This e -> visitThisExpr(e);
+            case Expr.Unary e -> visitUnaryExpr(e);
+            case Expr.Variable e -> visitVariableExpr(e);
+        };
     }
 
     String print(Stmt stmt) {
-        return stmt.accept(this);
+        return switch (stmt) {
+            case Stmt.Block s -> visitBlockStmt(s);
+            case Stmt.Class s -> visitClassStmt(s);
+            case Stmt.Expression s -> visitExpressionStmt(s);
+            case Stmt.Function s -> visitFunctionStmt(s);
+            case Stmt.If s -> visitIfStmt(s);
+            case Stmt.Print s -> visitPrintStmt(s);
+            case Stmt.Return s -> visitReturnStmt(s);
+            case Stmt.Var s -> visitVarStmt(s);
+            case Stmt.While s -> visitWhileStmt(s);
+        };
     }
 
-    @Override
     public String visitBlockStmt(Stmt.Block stmt) {
         StringBuilder builder = new StringBuilder();
         builder.append("(block ");
 
         for (Stmt statement : stmt.statements()) {
-            builder.append(statement.accept(this));
+            builder.append(print(statement));
         }
 
         builder.append(")");
         return builder.toString();
     }
 
-    @Override
     public String visitClassStmt(Stmt.Class stmt) {
         StringBuilder builder = new StringBuilder();
         builder.append("(class " + stmt.name().lexeme());
@@ -42,12 +63,10 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         return builder.toString();
     }
 
-    @Override
     public String visitExpressionStmt(Stmt.Expression stmt) {
         return parenthesize(";", stmt.expression());
     }
 
-    @Override
     public String visitFunctionStmt(Stmt.Function stmt) {
         StringBuilder builder = new StringBuilder();
         builder.append("(fun " + stmt.name().lexeme() + "(");
@@ -62,14 +81,13 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         builder.append(") ");
 
         for (Stmt body : stmt.body()) {
-            builder.append(body.accept(this));
+            builder.append(print(body));
         }
 
         builder.append(")");
         return builder.toString();
     }
 
-    @Override
     public String visitIfStmt(Stmt.If stmt) {
         if (stmt.elseBranch() == null) {
             return parenthesize2("if", stmt.condition(), stmt.thenBranch());
@@ -79,12 +97,10 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
                 stmt.elseBranch());
     }
 
-    @Override
     public String visitPrintStmt(Stmt.Print stmt) {
         return parenthesize("print", stmt.expression());
     }
 
-    @Override
     public String visitReturnStmt(Stmt.Return stmt) {
         if (stmt.value() == null) {
             return "(return)";
@@ -92,7 +108,6 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         return parenthesize("return", stmt.value());
     }
 
-    @Override
     public String visitVarStmt(Stmt.Var stmt) {
         if (stmt.initializer() == null) {
             return parenthesize2("var", stmt.name());
@@ -101,38 +116,31 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         return parenthesize2("var", stmt.name(), "=", stmt.initializer());
     }
 
-    @Override
     public String visitWhileStmt(Stmt.While stmt) {
         return parenthesize2("while", stmt.condition(), stmt.body());
     }
 
-    @Override
     public String visitAssignExpr(Expr.Assign expr) {
         return parenthesize2("=", expr.name().lexeme(), expr.value());
     }
 
-    @Override
     public String visitBinaryExpr(Expr.Binary expr) {
         return parenthesize(expr.operator().lexeme(),
                 expr.left(), expr.right());
     }
 
-    @Override
     public String visitCallExpr(Expr.Call expr) {
         return parenthesize2("call", expr.callee(), expr.arguments());
     }
 
-    @Override
     public String visitGetExpr(Expr.Get expr) {
         return parenthesize2(".", expr.object(), expr.name().lexeme());
     }
 
-    @Override
     public String visitGroupingExpr(Expr.Grouping expr) {
         return parenthesize("group", expr.expression());
     }
 
-    @Override
     public String visitLiteralExpr(Expr.Literal expr) {
         if (expr.value() == null) {
             return "nil";
@@ -140,33 +148,27 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         return expr.value().toString();
     }
 
-    @Override
     public String visitLogicalExpr(Expr.Logical expr) {
         return parenthesize(expr.operator().lexeme(), expr.left(), expr.right());
     }
 
-    @Override
     public String visitSetExpr(Expr.Set expr) {
         return parenthesize2("=",
                 expr.object(), expr.name().lexeme(), expr.value());
     }
 
-    @Override
     public String visitSuperExpr(Expr.Super expr) {
         return parenthesize2("super", expr.method());
     }
 
-    @Override
     public String visitThisExpr(Expr.This expr) {
         return "this";
     }
 
-    @Override
     public String visitUnaryExpr(Expr.Unary expr) {
         return parenthesize(expr.operator().lexeme(), expr.right());
     }
 
-    @Override
     public String visitVariableExpr(Expr.Variable expr) {
         return expr.name().lexeme();
     }
@@ -177,7 +179,7 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         builder.append("(").append(name);
         for (Expr expr : exprs) {
             builder.append(" ");
-            builder.append(expr.accept(this));
+            builder.append(print(expr));
         }
         builder.append(")");
 
@@ -201,9 +203,9 @@ class AstPrinter implements Expr.Visitor<String>, Stmt.Visitor<String> {
         for (Object part : parts) {
             builder.append(" ");
             if (part instanceof Expr) {
-                builder.append(((Expr) part).accept(this));
+                builder.append(print((Expr) part));
             } else if (part instanceof Stmt) {
-                builder.append(((Stmt) part).accept(this));
+                builder.append(print((Stmt) part));
             } else if (part instanceof Token) {
                 builder.append(((Token) part).lexeme());
             } else if (part instanceof List) {

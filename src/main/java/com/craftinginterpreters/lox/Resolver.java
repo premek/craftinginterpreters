@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
+public class Resolver {
 
     private final Interpreter interpreter;
     private final Stack<Map<String, Boolean>> scopes = new Stack<>();
@@ -36,7 +36,25 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         }
     }
 
-    @Override
+    interface StmtResolver<T extends Stmt> {
+
+        void resolveStmt(T stmt);
+
+    }
+
+    public class BlockResolver implements StmtResolver<Stmt.Block> {
+
+        
+        public void resolveStmt(Stmt.Block stmt) {
+            beginScope();
+            resolve(stmt.statements());
+            endScope();
+        }
+
+    }
+
+
+    
     public Void visitBlockStmt(Stmt.Block stmt) {
         beginScope();
         resolve(stmt.statements());
@@ -44,7 +62,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
+    
     public Void visitClassStmt(Stmt.Class stmt) {
         ClassType enclosingClass = currentClass;
         currentClass = ClassType.CLASS;
@@ -90,13 +108,13 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
+    
     public Void visitExpressionStmt(Stmt.Expression stmt) {
         resolve(stmt.expression());
         return null;
     }
 
-    @Override
+    
     public Void visitFunctionStmt(Stmt.Function stmt) {
         declare(stmt.name());
         define(stmt.name());
@@ -105,7 +123,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
+    
     public Void visitIfStmt(Stmt.If stmt) {
         resolve(stmt.condition());
         resolve(stmt.thenBranch());
@@ -115,13 +133,13 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
+    
     public Void visitPrintStmt(Stmt.Print stmt) {
         resolve(stmt.expression());
         return null;
     }
 
-    @Override
+    
     public Void visitReturnStmt(Stmt.Return stmt) {
         if (currentFunction == FunctionType.NONE) {
             Lox.error(stmt.keyword(), "Can't return from top-level code.");
@@ -139,7 +157,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
+    
     public Void visitVarStmt(Stmt.Var stmt) {
         declare(stmt.name());
         if (stmt.initializer() != null) {
@@ -149,28 +167,28 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
+    
     public Void visitWhileStmt(Stmt.While stmt) {
         resolve(stmt.condition());
         resolve(stmt.body());
         return null;
     }
 
-    @Override
+    
     public Void visitAssignExpr(Expr.Assign expr) {
         resolve(expr.value());
         resolveLocal(expr, expr.name());
         return null;
     }
 
-    @Override
+    
     public Void visitBinaryExpr(Expr.Binary expr) {
         resolve(expr.left());
         resolve(expr.right());
         return null;
     }
 
-    @Override
+    
     public Void visitCallExpr(Expr.Call expr) {
         resolve(expr.callee());
 
@@ -181,38 +199,38 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
+    
     public Void visitGetExpr(Expr.Get expr) {
         resolve(expr.object());
         return null;
     }
 
-    @Override
+    
     public Void visitGroupingExpr(Expr.Grouping expr) {
         resolve(expr.expression());
         return null;
     }
 
-    @Override
+    
     public Void visitLiteralExpr(Expr.Literal expr) {
         return null;
     }
 
-    @Override
+    
     public Void visitLogicalExpr(Expr.Logical expr) {
         resolve(expr.left());
         resolve(expr.right());
         return null;
     }
 
-    @Override
+    
     public Void visitSetExpr(Expr.Set expr) {
         resolve(expr.value());
         resolve(expr.object());
         return null;
     }
 
-    @Override
+    
     public Void visitSuperExpr(Expr.Super expr) {
         if (currentClass == ClassType.NONE) {
             Lox.error(expr.keyword(),
@@ -226,7 +244,7 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
+    
     public Void visitThisExpr(Expr.This expr) {
         if (currentClass == ClassType.NONE) {
             Lox.error(expr.keyword(),
@@ -238,13 +256,13 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
-    @Override
+    
     public Void visitUnaryExpr(Expr.Unary expr) {
         resolve(expr.right());
         return null;
     }
 
-    @Override
+    
     public Void visitVariableExpr(Expr.Variable expr) {
         if (!scopes.isEmpty()
                 && scopes.peek().get(expr.name().lexeme()) == Boolean.FALSE) {
@@ -257,11 +275,34 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     private void resolve(Stmt stmt) {
-        stmt.accept(this);
+        switch (stmt) {
+            case Stmt.Block s -> visitBlockStmt(s);
+            case Stmt.Class s -> visitClassStmt(s);
+            case Stmt.Expression s -> visitExpressionStmt(s);
+            case Stmt.Function s -> visitFunctionStmt(s);
+            case Stmt.If s -> visitIfStmt(s);
+            case Stmt.Print s -> visitPrintStmt(s);
+            case Stmt.Return s -> visitReturnStmt(s);
+            case Stmt.Var s -> visitVarStmt(s);
+            case Stmt.While s -> visitWhileStmt(s);
+        }
     }
 
     private void resolve(Expr expr) {
-        expr.accept(this);
+        switch (expr) {
+            case Expr.Assign e -> visitAssignExpr(e);
+            case Expr.Binary e -> visitBinaryExpr(e);
+            case Expr.Call e -> visitCallExpr(e);
+            case Expr.Get e -> visitGetExpr(e);
+            case Expr.Grouping e -> visitGroupingExpr(e);
+            case Expr.Literal e -> visitLiteralExpr(e);
+            case Expr.Logical e -> visitLogicalExpr(e);
+            case Expr.Set e -> visitSetExpr(e);
+            case Expr.Super e -> visitSuperExpr(e);
+            case Expr.This e -> visitThisExpr(e);
+            case Expr.Unary e -> visitUnaryExpr(e);
+            case Expr.Variable e -> visitVariableExpr(e);
+        }
     }
 
     private void resolveFunction(
