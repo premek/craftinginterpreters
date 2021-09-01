@@ -1,12 +1,17 @@
 package com.craftinginterpreters.lox;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class Lox {
 
@@ -26,8 +31,9 @@ public class Lox {
     }
 
     private static void runFile(String path) throws IOException {
-        byte[] bytes = Files.readAllBytes(Paths.get(path));
-        run(new String(bytes, Charset.defaultCharset()));
+        try ( InputStream is = Files.newInputStream(Paths.get(path))) {
+            run(is);
+        }
 
         // Indicate an error in the exit code.
         if (hadError) {
@@ -48,12 +54,12 @@ public class Lox {
             if (line == null) {
                 break;
             }
-            run(line);
+            run(new ByteArrayInputStream(line.getBytes(StandardCharsets.UTF_8)));
             hadError = false;
         }
     }
 
-    private static void run(String source) {
+    private static void run(InputStream source) throws IOException {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
