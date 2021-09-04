@@ -1,8 +1,6 @@
 package com.craftinginterpreters.lox;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static com.craftinginterpreters.lox.TokenType.*;
@@ -11,7 +9,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PushbackReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class Scanner {
 
@@ -40,7 +44,6 @@ public class Scanner {
 
     private final LineNumberReader lineNumberReader;
     private final PushbackReader source;
-    private final List<Token> tokens = new ArrayList<>();
     private final StringBuilder lexemeBuilder = new StringBuilder();
 
     Scanner(InputStream source) {
@@ -49,33 +52,51 @@ public class Scanner {
         this.source = new PushbackReader(lineNumberReader, LOOKAHEAD);
     }
 
-    List<Token> scanTokens() throws IOException {
-        while (!isAtEnd()) {
-            lexemeBuilder.delete(0, lexemeBuilder.length());
-            scanToken();
-        }
-
-        tokens.add(new Token(EOF, "", null, getLineNumber()));
-        return tokens; // TODO return stream
+    Stream<Token> scanTokens() {
+        return StreamSupport.stream(new TokenSpliterator(), false);
     }
 
-    private void scanToken() throws IOException {
+    private class TokenSpliterator extends Spliterators.AbstractSpliterator<Token> {
+
+        public TokenSpliterator() {
+            super(Long.MAX_VALUE, TokenSpliterator.NONNULL | TokenSpliterator.ORDERED | TokenSpliterator.IMMUTABLE);
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super Token> action) {
+            try {
+                if (!isAtEnd()) {
+                    scanToken(action);
+                    return true;
+                }
+
+                action.accept(new Token(EOF, "", null, getLineNumber()));
+                return false;
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    private void scanToken(Consumer<? super Token> action) throws IOException {
+        lexemeBuilder.delete(0, lexemeBuilder.length());
         char c = advance();
         switch (c) {
-            case '(' -> addToken(LEFT_PAREN, c);
-            case ')' -> addToken(RIGHT_PAREN, c);
-            case '{' -> addToken(LEFT_BRACE, c);
-            case '}' -> addToken(RIGHT_BRACE, c);
-            case ',' -> addToken(COMMA, c);
-            case '.' -> addToken(DOT, c);
-            case '-' -> addToken(MINUS, c);
-            case '+' -> addToken(PLUS, c);
-            case ';' -> addToken(SEMICOLON, c);
-            case '*' -> addToken(STAR, c);
-            case '!' -> addToken(match('=') ? BANG_EQUAL : BANG, c);
-            case '=' -> addToken(match('=') ? EQUAL_EQUAL : EQUAL, c);
-            case '<' -> addToken(match('=') ? LESS_EQUAL : LESS, c);
-            case '>' -> addToken(match('=') ? GREATER_EQUAL : GREATER, c);
+            case '(' -> addToken(LEFT_PAREN, c, action);
+            case ')' -> addToken(RIGHT_PAREN, c, action);
+            case '{' -> addToken(LEFT_BRACE, c, action);
+            case '}' -> addToken(RIGHT_BRACE, c, action);
+            case ',' -> addToken(COMMA, c, action);
+            case '.' -> addToken(DOT, c, action);
+            case '-' -> addToken(MINUS, c, action);
+            case '+' -> addToken(PLUS, c, action);
+            case ';' -> addToken(SEMICOLON, c, action);
+            case '*' -> addToken(STAR, c, action);
+            case '!' -> addToken(match('=') ? BANG_EQUAL : BANG, c, action);
+            case '=' -> addToken(match('=') ? EQUAL_EQUAL : EQUAL, c, action);
+            case '<' -> addToken(match('=') ? LESS_EQUAL : LESS, c, action);
+            case '>' -> addToken(match('=') ? GREATER_EQUAL : GREATER, c, action);
             case '/' -> {
                 if (match('/')) {
                     // A comment goes until the end of the line.
@@ -83,20 +104,20 @@ public class Scanner {
                         advance();
                     }
                 } else {
-                    addToken(SLASH, c);
+                    addToken(SLASH, c, action);
                 }
             }
 
             case ' ', '\r', '\n', '\t' -> {
                 // Ignore whitespace.
             }
-            case '"' -> string();
+            case '"' -> string(action);
 
             default -> {
                 if (isDigit(c)) {
-                    number();
+                    number(action);
                 } else if (isAlpha(c)) {
-                    identifier();
+                    identifier(action);
                 } else {
                     Lox.error(getLineNumber(), "Unexpected character.");
                 }
@@ -104,7 +125,7 @@ public class Scanner {
         }
     }
 
-    private void identifier() throws IOException {
+    private void identifier(Consumer<? super Token> action) throws IOException {
         while (isAlphaNumeric(peek())) {
             advance();
         }
@@ -114,10 +135,10 @@ public class Scanner {
         if (type == null) {
             type = IDENTIFIER;
         }
-        addToken(type);
+        addToken(type, action);
     }
 
-    private void number() throws IOException {
+    private void number(Consumer<? super Token> action) throws IOException {
         while (isDigit(peek())) {
             advance();
         }
@@ -131,10 +152,10 @@ public class Scanner {
                 advance();
             }
         }
-        addToken(NUMBER, Double.parseDouble(lexemeBuilder.toString()));
+        addToken(NUMBER, Double.parseDouble(lexemeBuilder.toString()), action);
     }
 
-    private void string() throws IOException {
+    private void string(Consumer<? super Token> action) throws IOException {
         
         // The opening ".
         advance();
@@ -153,7 +174,7 @@ public class Scanner {
 
         // Trim the surrounding quotes.
         String value = lexemeBuilder.toString().substring(1, lexemeBuilder.length()-1);
-        addToken(STRING, value);
+        addToken(STRING, value, action);
     }
 
     private boolean match(char expected) throws IOException {
@@ -222,13 +243,13 @@ public class Scanner {
         return c;
     }
 
-    private void addToken(TokenType type) {
-        addToken(type, null);
+    private void addToken(TokenType type, Consumer<? super Token> action) {
+        addToken(type, null, action);
     }
 
-    private void addToken(TokenType type, Object literal) {
+    private void addToken(TokenType type, Object literal, Consumer<? super Token> action) {
         String text = lexemeBuilder.toString();
-        tokens.add(new Token(type, text, literal, getLineNumber()));
+        action.accept(new Token(type, text, literal, getLineNumber()));
     }
 
 

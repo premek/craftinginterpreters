@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Lox {
@@ -59,9 +60,9 @@ public class Lox {
         }
     }
 
-    private static void run(InputStream source) throws IOException {
+    private static void run(InputStream source) {
         Scanner scanner = new Scanner(source);
-        List<Token> tokens = scanner.scanTokens();
+        List<Token> tokens = scanner.scanTokens().collect(Collectors.toList()); // TODO use stream
         Parser parser = new Parser(tokens);
         List<Stmt> statements = parser.parse();
 
