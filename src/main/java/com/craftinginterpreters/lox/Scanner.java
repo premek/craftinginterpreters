@@ -9,13 +9,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PushbackReader;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
+import java.util.Optional;
 
 public class Scanner {
 
@@ -50,82 +45,70 @@ public class Scanner {
         this.lineNumberReader = new LineNumberReader(new InputStreamReader(source, StandardCharsets.UTF_8));
         this.lineNumberReader.setLineNumber(1);
         this.source = new PushbackReader(lineNumberReader, LOOKAHEAD);
+    }    
+    
+    public Token getNextToken() throws IOException {
+        Optional<Token> token = scanToken();
+        if (!token.isEmpty()) {
+            return token.get(); // to avoid having IOException in orElseGet
+        }
+        return getNextToken();
     }
 
-    Stream<Token> scanTokens() {
-        return StreamSupport.stream(new TokenSpliterator(), false);
-    }
-
-    private class TokenSpliterator extends Spliterators.AbstractSpliterator<Token> {
-
-        public TokenSpliterator() {
-            super(Long.MAX_VALUE, TokenSpliterator.NONNULL | TokenSpliterator.ORDERED | TokenSpliterator.IMMUTABLE);
+    private Optional<Token> scanToken() throws IOException {
+        if (isAtEnd()) {
+            return Optional.of(new Token(EOF, "", null, getLineNumber()));
         }
 
-        @Override
-        public boolean tryAdvance(Consumer<? super Token> action) {
-            try {
-                if (!isAtEnd()) {
-                    scanToken(action);
-                    return true;
-                }
-
-                action.accept(new Token(EOF, "", null, getLineNumber()));
-                return false;
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-    }
-
-    private void scanToken(Consumer<? super Token> action) throws IOException {
         lexemeBuilder.delete(0, lexemeBuilder.length());
         char c = advance();
-        switch (c) {
-            case '(' -> addToken(LEFT_PAREN, c, action);
-            case ')' -> addToken(RIGHT_PAREN, c, action);
-            case '{' -> addToken(LEFT_BRACE, c, action);
-            case '}' -> addToken(RIGHT_BRACE, c, action);
-            case ',' -> addToken(COMMA, c, action);
-            case '.' -> addToken(DOT, c, action);
-            case '-' -> addToken(MINUS, c, action);
-            case '+' -> addToken(PLUS, c, action);
-            case ';' -> addToken(SEMICOLON, c, action);
-            case '*' -> addToken(STAR, c, action);
-            case '!' -> addToken(match('=') ? BANG_EQUAL : BANG, c, action);
-            case '=' -> addToken(match('=') ? EQUAL_EQUAL : EQUAL, c, action);
-            case '<' -> addToken(match('=') ? LESS_EQUAL : LESS, c, action);
-            case '>' -> addToken(match('=') ? GREATER_EQUAL : GREATER, c, action);
+        return switch (c) {
+            case '(' -> addToken(LEFT_PAREN, c);
+            case ')' -> addToken(RIGHT_PAREN, c);
+            case '{' -> addToken(LEFT_BRACE, c);
+            case '}' -> addToken(RIGHT_BRACE, c);
+            case ',' -> addToken(COMMA, c);
+            case '.' -> addToken(DOT, c);
+            case '-' -> addToken(MINUS, c);
+            case '+' -> addToken(PLUS, c);
+            case ';' -> addToken(SEMICOLON, c);
+            case '*' -> addToken(STAR, c);
+            case '!' -> addToken(match('=') ? BANG_EQUAL : BANG, c);
+            case '=' -> addToken(match('=') ? EQUAL_EQUAL : EQUAL, c);
+            case '<' -> addToken(match('=') ? LESS_EQUAL : LESS, c);
+            case '>' -> addToken(match('=') ? GREATER_EQUAL : GREATER, c);
             case '/' -> {
                 if (match('/')) {
                     // A comment goes until the end of the line.
                     while (peek() != '\n' && !isAtEnd()) {
                         advance();
                     }
+                    yield Optional.empty();
                 } else {
-                    addToken(SLASH, c, action);
+                    yield addToken(SLASH, c);
                 }
             }
 
             case ' ', '\r', '\n', '\t' -> {
                 // Ignore whitespace.
+                yield Optional.empty();
             }
-            case '"' -> string(action);
+            case '"' -> string();
 
             default -> {
                 if (isDigit(c)) {
-                    number(action);
+                    yield number();
                 } else if (isAlpha(c)) {
-                    identifier(action);
+                    yield identifier();
                 } else {
                     Lox.error(getLineNumber(), "Unexpected character.");
+                    yield Optional.empty();
                 }
             }
-        }
+        };
     }
 
-    private void identifier(Consumer<? super Token> action) throws IOException {
+    private Optional<Token> identifier() throws IOException {
         while (isAlphaNumeric(peek())) {
             advance();
         }
@@ -135,10 +118,10 @@ public class Scanner {
         if (type == null) {
             type = IDENTIFIER;
         }
-        addToken(type, action);
+        return addToken(type);
     }
 
-    private void number(Consumer<? super Token> action) throws IOException {
+    private Optional<Token> number() throws IOException {
         while (isDigit(peek())) {
             advance();
         }
@@ -152,10 +135,10 @@ public class Scanner {
                 advance();
             }
         }
-        addToken(NUMBER, Double.parseDouble(lexemeBuilder.toString()), action);
+        return addToken(NUMBER, Double.parseDouble(lexemeBuilder.toString()));
     }
 
-    private void string(Consumer<? super Token> action) throws IOException {
+    private Optional<Token> string() throws IOException {
         
         // The opening ".
         advance();
@@ -166,7 +149,7 @@ public class Scanner {
 
         if (isAtEnd()) {
             Lox.error(getLineNumber(), "Unterminated string.");
-            return;
+            return Optional.empty();
         }
 
         // The closing ".
@@ -174,7 +157,7 @@ public class Scanner {
 
         // Trim the surrounding quotes.
         String value = lexemeBuilder.toString().substring(1, lexemeBuilder.length()-1);
-        addToken(STRING, value, action);
+        return addToken(STRING, value);
     }
 
     private boolean match(char expected) throws IOException {
@@ -243,13 +226,13 @@ public class Scanner {
         return c;
     }
 
-    private void addToken(TokenType type, Consumer<? super Token> action) {
-        addToken(type, null, action);
+    private Optional<Token> addToken(TokenType type) {
+        return addToken(type, null);
     }
 
-    private void addToken(TokenType type, Object literal, Consumer<? super Token> action) {
+    private Optional<Token> addToken(TokenType type, Object literal) {
         String text = lexemeBuilder.toString();
-        action.accept(new Token(type, text, literal, getLineNumber()));
+        return Optional.of(new Token(type, text, literal, getLineNumber()));
     }
 
 

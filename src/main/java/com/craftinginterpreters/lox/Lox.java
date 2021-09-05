@@ -60,10 +60,9 @@ public class Lox {
         }
     }
 
-    private static void run(InputStream source) {
+    private static void run(InputStream source) throws IOException {
         Scanner scanner = new Scanner(source);
-        List<Token> tokens = scanner.scanTokens().collect(Collectors.toList()); // TODO use stream
-        Parser parser = new Parser(tokens);
+        Parser parser = new Parser(scanner);
         List<Stmt> statements = parser.parse();
 
         // Stop if there was a syntax error.

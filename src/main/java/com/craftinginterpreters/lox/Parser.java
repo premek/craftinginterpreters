@@ -5,20 +5,25 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.craftinginterpreters.lox.TokenType.*;
+import java.io.IOException;
 
 class Parser {
 
+    private final Scanner scanner;
+
+    private Token currentToken;
+    private Token previousToken;
+    
     private static class ParseError extends RuntimeException {
     }
 
-    private final List<Token> tokens;
-    private int current = 0;
-
-    Parser(List<Token> tokens) {
-        this.tokens = tokens;
+    Parser(Scanner scanner) throws IOException {
+        this.scanner = scanner;
+        this.currentToken = scanner.getNextToken();
+        this.previousToken = null;
     }
 
-    List<Stmt> parse() {
+    List<Stmt> parse() throws IOException {
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
             statements.add(declaration());
@@ -27,11 +32,11 @@ class Parser {
         return statements;
     }
 
-    private Expr expression() {
+    private Expr expression() throws IOException {
         return assignment();
     }
 
-    private Stmt declaration() {
+    private Stmt declaration() throws IOException {
         try {
             if (match(CLASS)) {
                 return classDeclaration();
@@ -51,7 +56,7 @@ class Parser {
         }
     }
 
-    private Stmt classDeclaration() {
+    private Stmt classDeclaration() throws IOException {
         Token name = consume(IDENTIFIER, "Expect class name.");
 
         Expr.Variable superclass = null;
@@ -72,7 +77,7 @@ class Parser {
         return new Stmt.Class(name, superclass, methods);
     }
 
-    private Stmt statement() {
+    private Stmt statement() throws IOException {
         if (match(FOR)) {
             return forStatement();
         }
@@ -95,7 +100,7 @@ class Parser {
         return expressionStatement();
     }
 
-    private Stmt forStatement() {
+    private Stmt forStatement() throws IOException {
         consume(LEFT_PAREN, "Expect '(' after 'for'.");
 
         Stmt initializer;
@@ -139,7 +144,7 @@ class Parser {
         return body;
     }
 
-    private Stmt ifStatement() {
+    private Stmt ifStatement() throws IOException {
         consume(LEFT_PAREN, "Expect '(' after 'if'.");
         Expr condition = expression();
         consume(RIGHT_PAREN, "Expect ')' after if condition.");
@@ -153,13 +158,13 @@ class Parser {
         return new Stmt.If(condition, thenBranch, elseBranch);
     }
 
-    private Stmt printStatement() {
+    private Stmt printStatement() throws IOException {
         Expr value = expression();
         consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Print(value);
     }
 
-    private Stmt returnStatement() {
+    private Stmt returnStatement() throws IOException {
         Token keyword = previous();
         Expr value = null;
         if (!check(SEMICOLON)) {
@@ -170,7 +175,7 @@ class Parser {
         return new Stmt.Return(keyword, value);
     }
 
-    private Stmt varDeclaration() {
+    private Stmt varDeclaration() throws IOException {
         Token name = consume(IDENTIFIER, "Expect variable name.");
 
         Expr initializer = null;
@@ -182,7 +187,7 @@ class Parser {
         return new Stmt.Var(name, initializer);
     }
 
-    private Stmt whileStatement() {
+    private Stmt whileStatement() throws IOException {
         consume(LEFT_PAREN, "Expect '(' after 'while'.");
         Expr condition = expression();
         consume(RIGHT_PAREN, "Expect ')' after condition.");
@@ -191,13 +196,13 @@ class Parser {
         return new Stmt.While(condition, body);
     }
 
-    private Stmt expressionStatement() {
+    private Stmt expressionStatement() throws IOException {
         Expr expr = expression();
         consume(SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
     }
 
-    private Stmt.Function function(String kind) {
+    private Stmt.Function function(String kind) throws IOException {
         Token name = consume(IDENTIFIER, "Expect " + kind + " name.");
         consume(LEFT_PAREN, "Expect '(' after " + kind + " name.");
         List<Token> parameters = new ArrayList<>();
@@ -218,7 +223,7 @@ class Parser {
         return new Stmt.Function(name, parameters, body);
     }
 
-    private List<Stmt> block() {
+    private List<Stmt> block() throws IOException {
         List<Stmt> statements = new ArrayList<>();
 
         while (!check(RIGHT_BRACE) && !isAtEnd()) {
@@ -229,7 +234,7 @@ class Parser {
         return statements;
     }
 
-    private Expr assignment() {
+    private Expr assignment() throws IOException {
         Expr expr = or();
 
         if (match(EQUAL)) {
@@ -250,7 +255,7 @@ class Parser {
         return expr;
     }
 
-    private Expr or() {
+    private Expr or() throws IOException {
         Expr expr = and();
 
         while (match(OR)) {
@@ -262,7 +267,7 @@ class Parser {
         return expr;
     }
 
-    private Expr and() {
+    private Expr and() throws IOException {
         Expr expr = equality();
 
         while (match(AND)) {
@@ -274,7 +279,7 @@ class Parser {
         return expr;
     }
 
-    private Expr equality() {
+    private Expr equality() throws IOException {
         Expr expr = comparison();
 
         while (match(BANG_EQUAL, EQUAL_EQUAL)) {
@@ -286,7 +291,7 @@ class Parser {
         return expr;
     }
 
-    private Expr comparison() {
+    private Expr comparison() throws IOException {
         Expr expr = term();
 
         while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
@@ -298,7 +303,7 @@ class Parser {
         return expr;
     }
 
-    private Expr term() {
+    private Expr term() throws IOException {
         Expr expr = factor();
 
         while (match(MINUS, PLUS)) {
@@ -310,7 +315,7 @@ class Parser {
         return expr;
     }
 
-    private Expr factor() {
+    private Expr factor() throws IOException {
         Expr expr = unary();
 
         while (match(SLASH, STAR)) {
@@ -322,7 +327,7 @@ class Parser {
         return expr;
     }
 
-    private Expr unary() {
+    private Expr unary() throws IOException {
         if (match(BANG, MINUS)) {
             Token operator = previous();
             Expr right = unary();
@@ -332,7 +337,7 @@ class Parser {
         return call();
     }
 
-    private Expr finishCall(Expr callee) {
+    private Expr finishCall(Expr callee) throws IOException {
         List<Expr> arguments = new ArrayList<>();
         if (!check(RIGHT_PAREN)) {
             do {
@@ -349,7 +354,7 @@ class Parser {
         return new Expr.Call(callee, paren, arguments);
     }
 
-    private Expr call() {
+    private Expr call() throws IOException {
         Expr expr = primary();
 
         while (true) {
@@ -367,7 +372,7 @@ class Parser {
         return expr;
     }
 
-    private Expr primary() {
+    private Expr primary() throws IOException {
         if (match(FALSE)) {
             return new Expr.Literal(false);
         }
@@ -407,7 +412,7 @@ class Parser {
         throw error(peek(), "Expect expression.");
     }
 
-    private boolean match(TokenType... types) {
+    private boolean match(TokenType... types) throws IOException {
         for (TokenType type : types) {
             if (check(type)) {
                 advance();
@@ -418,7 +423,7 @@ class Parser {
         return false;
     }
 
-    private Token consume(TokenType type, String message) {
+    private Token consume(TokenType type, String message) throws IOException {
         if (check(type)) {
             return advance();
         }
@@ -432,11 +437,13 @@ class Parser {
         }
         return peek().type() == type;
     }
-
-    private Token advance() {
+    
+    private Token advance() throws IOException {
         if (!isAtEnd()) {
-            current++;
+            previousToken = currentToken;
+            currentToken = scanner.getNextToken();
         }
+        
         return previous();
     }
 
@@ -445,11 +452,11 @@ class Parser {
     }
 
     private Token peek() {
-        return tokens.get(current);
+        return currentToken;
     }
 
     private Token previous() {
-        return tokens.get(current - 1);
+        return previousToken;
     }
 
     private ParseError error(Token token, String message) {
@@ -457,7 +464,7 @@ class Parser {
         return new ParseError();
     }
 
-    private void synchronize() {
+    private void synchronize() throws IOException {
         advance();
 
         while (!isAtEnd()) {
